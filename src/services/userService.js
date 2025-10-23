@@ -51,3 +51,12 @@ export const updateUser = async (id, data) => {
 
   return { id, fullname, username, email, role };
 };
+
+export const deleteUser = async (id) => {
+  const userId = Number(id);
+  const [result] = await pool.query("DELETE FROM users WHERE id=?", [userId]);
+  if (result.affectedRows === 0) {
+    throw new ResponseError(404, "User not Found");
+  }
+  return { message: "User deleted successfully" };
+};
