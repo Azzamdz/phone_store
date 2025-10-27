@@ -58,7 +58,7 @@ export const deleteUserHandler = async (req, res, next) => {
 
     res.status(200).json({
       status: "success",
-      data: respose,
+      data: response,
     });
   } catch (error) {
     next(error);
