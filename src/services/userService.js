@@ -1,6 +1,7 @@
-import { request } from "express";
 import { pool } from "../config/db.js";
 import { ResponseError } from "../erors/responseError.js";
+import { updateUserSchema, userSchema } from "../validations/userValidation.js";
+import { validate } from "../validations/validate.js";
 
 export const getAllUsers = async () => {
   const [users] = await pool.query(
@@ -24,8 +25,8 @@ export const getUserById = async (id) => {
 };
 
 export const createUser = async (request) => {
-  const { fullname, username, email, password, role } = request;
-
+  const validation = validate(userSchema, request);
+  const { fullname, username, email, password, role } = validation;
   const [users] = await pool.query(
     "INSERT INTO users (fullname, username, email, password, role) VALUES (?, ?, ?, ?, ?)",
     [fullname, username, email, password, role]
@@ -41,19 +42,38 @@ export const createUser = async (request) => {
   return newUser;
 };
 
-export const updateUser = async (id, data) => {
-  const { fullname, username, email, password, role } = data;
+export const updateUser = async (id, request) => {
+  const userId = Number(id);
 
-  await pool.query(
-    "UPDATE users SET fullname=?, username=?, email=?, password=?, role=? WHERE id=?",
-    [fullname, username, email, password, role, id]
+  const validation = validate(updateUserSchema, request);
+
+  const { fullname, username, email, role, address, phone_number, age } =
+    validation;
+
+  const [result] = await pool.query(
+    `UPDATE users 
+         SET fullname=?, username=?, email=?, role=?, address=?, phone_number=?, age=? 
+         WHERE id=?`,
+    [fullname, username, email, role, address, phone_number, age, userId]
   );
 
-  return { id, fullname, username, email, role };
+  if (result.affectedRows === 0) {
+    throw new ResponseError(400, "Tidak ada perubahan pada data user");
+  }
+
+  const [updatedUser] = await pool.query(
+    `SELECT id, fullname, username, email, role, address, phone_number, age 
+         FROM users 
+         WHERE id=?`,
+    [userId]
+  );
+
+  return updatedUser[0];
 };
 
 export const deleteUser = async (id) => {
   const userId = Number(id);
+
   const [result] = await pool.query("DELETE FROM users WHERE id=?", [userId]);
   if (result.affectedRows === 0) {
     throw new ResponseError(404, "User not Found");
