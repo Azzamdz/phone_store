@@ -49,10 +49,6 @@ export const createProduct = async (request) => {
 export const updateProduct = async (id, data) => {
   const productId = Number(id);
 
-  if (isNaN(productId)) {
-    throw new ResponseError(400, "ID produk tidak valid");
-  }
-
   const validation = validate(updateProductSchema, data);
   const { user_id, name, description, price, stock } = validation;
 
@@ -62,16 +58,15 @@ export const updateProduct = async (id, data) => {
   );
 
   if (result.affectedRows === 0) {
-    throw new ResponseError(
-      404,
-      "Produk tidak ditemukan atau tidak ada perubahan"
-    );
+    throw new ResponseError(400, "Tidak ada perubahan pada data produk");
   }
 
-  return {
-    message: "Produk berhasil diperbarui",
-    data: { id: productId, user_id, name, description, price, stock },
-  };
+  const [updatedProduct] = await pool.query(
+    "SELECT id, user_id, name, description, price, stock, created_at, updated_at FROM products WHERE id = ?",
+    [productId]
+  );
+
+  return updatedProduct[0];
 };
 
 export const deleteProduct = async (id) => {
