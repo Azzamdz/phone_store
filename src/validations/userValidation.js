@@ -1,6 +1,6 @@
 import z from "zod";
 
-export const userSchema = z.object({
+export const UserSchema = z.object({
   fullname: z.string().min(3, "Fullname must be at least 3 characters long"),
   username: z
     .string()

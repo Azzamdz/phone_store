@@ -1,7 +1,8 @@
 import { pool } from "../config/db.js";
 import { ResponseError } from "../erors/responseError.js";
-import { updateUserSchema, userSchema } from "../validations/userValidation.js";
+import { updateUserSchema, UserSchema } from "../validations/userValidation.js";
 import { validate } from "../validations/validate.js";
+import bcrypt from "bcrypt";
 
 export const getAllUsers = async () => {
   const [users] = await pool.query(
@@ -25,11 +26,15 @@ export const getUserById = async (id) => {
 };
 
 export const createUser = async (request) => {
-  const validation = validate(userSchema, request);
-  const { fullname, username, email, password, role } = validation;
+  const validated = validate(UserSchema, request);
+
+  const { fullname, username, email, password, role } = validated;
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   const [users] = await pool.query(
-    "INSERT INTO users (fullname, username, email, password, role) VALUES (?, ?, ?, ?, ?)",
-    [fullname, username, email, password, role]
+    "INSERT INTO users (fullname, username, email, password, role) VALUES (?,?,?,?,?)",
+    [fullname, username, email, hashedPassword, role]
   );
 
   const newUser = {
@@ -39,6 +44,7 @@ export const createUser = async (request) => {
     email,
     role,
   };
+
   return newUser;
 };
 
